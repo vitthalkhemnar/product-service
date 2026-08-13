@@ -6,14 +6,19 @@ import java.io.Reader;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.StringJoiner;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -34,8 +39,20 @@ public class ProductService {
 
 	private final ObjectMapper objMapper;
 	private final ProductRepository productRepository;
+	
+	public ResponseEntity<?> getProducts() {
+		List<Product> products = productRepository.findAll();
+		
+		return ResponseEntity.ok().body(products.stream().limit(10).toList());
+	}
+	
+	public ResponseEntity<?> getProducts(Pageable pageable) {
+		Page<Product> products = productRepository.findAll(pageable);
+		
+		return ResponseEntity.ok().body(products);
+	}
 
-	public void bulkUploadProducts(MultipartFile file) {
+	public ResponseEntity<?> bulkUploadProducts(MultipartFile file) {
 
 		try (Reader reader = new BufferedReader(
 				new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));
@@ -66,7 +83,9 @@ public class ProductService {
 
 		} catch (Exception e) {
 			log.error("", e);
+			return ResponseEntity.internalServerError().body(e);
 		}
+		return ResponseEntity.ok().body("Products Imported Successfully.");
 	}
 
 	private Product mapProduct(CSVRecord row) {
@@ -102,11 +121,11 @@ public class ProductService {
 		Double rating = Double.valueOf(row.get("rating"));
 		Double weight = Double.valueOf(row.get("weight_kg"));
 
-		LocalDate releaseDate = LocalDate.parse(row.get("release_date"));
+		LocalDate releaseDate = LocalDate.parse(row.get("release_date"), DateTimeFormatter.ofPattern("dd-MM-yyyy"));
 		
 		String sku = getSku(productCode, color, size);
 				
-		ProductVariant.builder()
+		ProductVariant productVariant = ProductVariant.builder()
 			.active(inStock)
 			.color(color)
 			.size(size)
@@ -114,6 +133,24 @@ public class ProductService {
 			.price(price)
 			.sku(sku)
 			.build();
+				
+		Optional<Product> productOpt = productRepository.findById(Long.valueOf(productId));
+		
+		List<ProductVariant> variants = new ArrayList<>();
+		if(productOpt.isPresent()) {
+			variants = productOpt.get().getVariants();
+			
+			Optional<ProductVariant> existingProdOpt = variants.stream().filter(p -> p.getSku().equals(productVariant.getSku())).findFirst();
+			
+			if(existingProdOpt.isPresent()) {
+				ProductVariant variant = existingProdOpt.get();
+				variant.setStock(variant.getStock() + productVariant.getStock());
+			} else {
+				variants.add(productVariant);
+			}
+		} else {
+			variants.add(productVariant);
+		}
 						
 		return Product.builder()
 			.id(Long.valueOf(productId))
@@ -129,6 +166,7 @@ public class ProductService {
 			.attributes(attributesMap)
 			.images(List.of())
 			.status(ProductStatus.ACTIVE)
+			.variants(variants)
 			.build();
 	}
 
