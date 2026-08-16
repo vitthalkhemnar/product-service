@@ -2,6 +2,10 @@ package com.ecom.product.document;
 
 import java.math.BigDecimal;
 
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,8 +15,16 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Document(collection = "product_variants")
 public class ProductVariant {
 
+	@Id
+	@Field("variant_id")
+	private Long variantId;
+	
+	@Field("product_id")
+	private Long productId;
+	
 	/**
 	 * Example: CLO-TSH-ALS-100011-BK-M (productCode + color + size)
 	 */

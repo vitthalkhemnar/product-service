@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.StringJoiner;
+import java.util.stream.Collectors;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -25,6 +26,8 @@ import org.springframework.web.multipart.MultipartFile;
 import com.ecom.product.document.Product;
 import com.ecom.product.document.ProductVariant;
 import com.ecom.product.repository.ProductRepository;
+import com.ecom.product.repository.ProductVariantRepository;
+import com.ecom.product.util.CommonUtil;
 import com.ecom.product.util.ProductStatus;
 import com.ecom.product.util.SkuConstants;
 
@@ -39,20 +42,19 @@ public class ProductService {
 
 	private final ObjectMapper objMapper;
 	private final ProductRepository productRepository;
+	private final ProductVariantRepository variantRepository;
 	
-	public ResponseEntity<?> getProducts() {
+	public List<Product> getProducts() {
 		List<Product> products = productRepository.findAll();
-		
-		return ResponseEntity.ok().body(products.stream().limit(10).toList());
+		return products.stream().limit(10).toList();
 	}
 	
-	public ResponseEntity<?> getProducts(Pageable pageable) {
+	public Page<Product> getProducts(Pageable pageable) {
 		Page<Product> products = productRepository.findAll(pageable);
-		
-		return ResponseEntity.ok().body(products);
+		return products;
 	}
 
-	public ResponseEntity<?> bulkUploadProducts(MultipartFile file) {
+	public void bulkUploadProducts(MultipartFile file) {
 
 		try (Reader reader = new BufferedReader(
 				new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));
@@ -64,50 +66,62 @@ public class ProductService {
 						.parse(reader)
 		) {
 			List<Product> products = new ArrayList<>();
+			List<ProductVariant> variants = new ArrayList<>();
 			
 			for(CSVRecord row : parser) {
 				
 				Product product = mapProduct(row);
 				products.add(product);
 				
+				ProductVariant variant = mapProductVariant(row);
+				variants.add(variant);
+				
 				if(products.size() == 500) {
 					
 					productRepository.saveAll(products);
 					products.clear();
+				}
+				
+				if(variants.size() == 500) {
+				
+					variantRepository.saveAll(variants);
+					variants.clear();
 				}
 			}
 			
 			if(!products.isEmpty()) {
 				productRepository.saveAll(products);
 			}
+			
+			if(!variants.isEmpty()) {
+				variantRepository.saveAll(variants);
+			}
 
+			log.info("Products imported successfully.");
 		} catch (Exception e) {
-			log.error("", e);
-			return ResponseEntity.internalServerError().body(e);
+			log.error("Importing products failed.", e);
 		}
-		return ResponseEntity.ok().body("Products Imported Successfully.");
 	}
 
 	private Product mapProduct(CSVRecord row) {
 		
 		String productId = row.get("product_id");
+		String variantId = row.get("variant_id");
 		String productCode = row.get("product_code");
 		String productName = row.get("product_name");
 		String category = row.get("category");
 		String subcategory = row.get("subcategory");
 		String brand = row.get("brand");
 		String description = row.get("description");
-
 		String warehouse = row.get("warehouse_location");
 		String size = row.get("size");
 		String color = row.get("color");
 		String material = row.get("material");
-		
 		String dimensions = row.get("dimensions_cm_lwh");
-		String attributesJson = row.get("attributes_json");
-		Map<String, Object> attributesMap = objMapper.readValue(attributesJson, Map.class);
-		
 		String currency = row.get("currency");
+		String attributesJson = row.get("attributes_json");
+		
+		Map<String, Object> attributesMap = objMapper.readValue(attributesJson, Map.class);
 		
 		Boolean inStock = "Yes".equalsIgnoreCase(row.get("in_stock"));
 
@@ -122,35 +136,6 @@ public class ProductService {
 		Double weight = Double.valueOf(row.get("weight_kg"));
 
 		LocalDate releaseDate = LocalDate.parse(row.get("release_date"), DateTimeFormatter.ofPattern("dd-MM-yyyy"));
-		
-		String sku = getSku(productCode, color, size);
-				
-		ProductVariant productVariant = ProductVariant.builder()
-			.active(inStock)
-			.color(color)
-			.size(size)
-			.stock(availability)
-			.price(price)
-			.sku(sku)
-			.build();
-				
-		Optional<Product> productOpt = productRepository.findById(Long.valueOf(productId));
-		
-		List<ProductVariant> variants = new ArrayList<>();
-		if(productOpt.isPresent()) {
-			variants = productOpt.get().getVariants();
-			
-			Optional<ProductVariant> existingProdOpt = variants.stream().filter(p -> p.getSku().equals(productVariant.getSku())).findFirst();
-			
-			if(existingProdOpt.isPresent()) {
-				ProductVariant variant = existingProdOpt.get();
-				variant.setStock(variant.getStock() + productVariant.getStock());
-			} else {
-				variants.add(productVariant);
-			}
-		} else {
-			variants.add(productVariant);
-		}
 						
 		return Product.builder()
 			.id(Long.valueOf(productId))
@@ -166,19 +151,54 @@ public class ProductService {
 			.attributes(attributesMap)
 			.images(List.of())
 			.status(ProductStatus.ACTIVE)
-			.variants(variants)
 			.build();
+	}
+	
+	private ProductVariant mapProductVariant(CSVRecord row) {
+		
+		String productId = row.get("product_id");
+		String variantId = row.get("variant_id");
+		String size = row.get("size");
+		String color = row.get("color");
+		String sku = row.get("sku");
+		
+		Boolean inStock = "Yes".equalsIgnoreCase(row.get("in_stock"));
+		BigDecimal price = new BigDecimal(row.get("price"));
+		Integer availability = Integer.valueOf(row.get("availability_count"));
+
+		// String sku = getSku(productCode, color, size);
+				
+		ProductVariant variant = ProductVariant.builder()
+			.productId(Long.valueOf(productId))
+			.variantId(Long.valueOf(variantId))
+			.active(inStock)
+			.stock(availability)
+			.price(price)
+			.sku(sku)
+			.build();
+		
+		if(CommonUtil.isNotBlank(color))
+			variant.setColor(color);
+		
+		if(CommonUtil.isNotBlank(size))
+			variant.setColor(size);
+		
+		return variant;
 	}
 
 	private String getSku(String productCode, String color, String size) {
 		return new StringJoiner(SkuConstants.SKU_SEPARATOR)
 				.add(productCode)
-				.add(getSkuCode(color))
-				.add(getSkuCode(size))
+				.add(getSkuCode(color, "color"))
+				.add(getSkuCode(size, "size"))
 				.toString();
 	}
 	
-	private String getSkuCode(String key) {
-		return SkuConstants.COLOR.get(key) != null ? SkuConstants.COLOR.get(key) : SkuConstants.NA;
+	private String getSkuCode(String key, String type) {
+		return switch (type) {
+			case "color" -> SkuConstants.COLOR.get(key) != null ? SkuConstants.COLOR.get(key) : SkuConstants.NA;
+			case "size" -> SkuConstants.SIZE.get(key) != null ? SkuConstants.SIZE.get(key) : SkuConstants.NA;
+			default -> SkuConstants.NA;
+		};
 	}
 }

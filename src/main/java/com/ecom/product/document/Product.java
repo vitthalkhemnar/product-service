@@ -93,7 +93,7 @@ public class Product {
 	 * White / M 
 	 * White / L
 	 */
-	private List<ProductVariant> variants;
+	// private List<ProductVariant> variants;
 
 	/**
 	 * Product image URLs.
