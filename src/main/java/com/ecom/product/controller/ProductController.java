@@ -28,6 +28,20 @@ public class ProductController {
 
 	@PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<?> bulkUpload(@RequestParam("file") MultipartFile file) {
+		
+		String fileName = file.getName();
+		int index = fileName.indexOf(".");
+		
+		if(index == -1) {
+			return ResponseEntity.badRequest().body("File type not known - " + fileName);
+		}
+		
+		String extention = fileName.substring(index);
+		
+		if(!"csv".equals(extention)) {
+			return ResponseEntity.badRequest().body("Upload only .csv files - " + fileName);
+		}
+		
 		productService.bulkUploadProducts(file);
 		return ResponseEntity.ok().body("Products Imported Successfully.");
 	}
