@@ -3,6 +3,7 @@ package com.ecom.product.document;
 import java.math.BigDecimal;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -19,15 +20,16 @@ import lombok.NoArgsConstructor;
 public class ProductVariant {
 
 	@Id
-	@Field("variant_id")
-	private Long variantId;
+	private Long id;
 	
+	@Indexed
 	@Field("product_id")
 	private Long productId;
 	
 	/**
 	 * Example: CLO-TSH-ALS-100011-BK-M (productCode + color + size)
 	 */
+	@Indexed(unique = true)
 	private String sku;
 
 	/**

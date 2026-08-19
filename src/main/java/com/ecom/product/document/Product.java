@@ -8,6 +8,7 @@ import java.util.Map;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -31,9 +32,11 @@ public class Product {
 	/**
 	 * Example: CLO-TSH-ALS-BK-M-100011
 	 */
+	@Indexed(unique = true)
 	@Field("product_code")
 	private String productCode;
 
+	@Indexed
 	@Field("product_name")
 	private String productName;
 
@@ -42,16 +45,19 @@ public class Product {
 	/**
 	 * Example: CLO
 	 */
+	@Indexed
 	private String category;
 
 	/**
 	 * Example: TSH
 	 */
+	@Indexed
 	private String subcategory;
 
 	/**
 	 * Example: ALS
 	 */
+	@Indexed
 	private String brand;
 
 	/**

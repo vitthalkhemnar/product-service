@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.ecom.product.document.Product;
 import com.ecom.product.service.ProductService;
+import com.ecom.product.util.CommonUtil;
 
 import lombok.RequiredArgsConstructor;
 
@@ -29,17 +30,17 @@ public class ProductController {
 	@PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<?> bulkUpload(@RequestParam("file") MultipartFile file) {
 		
-		String fileName = file.getName();
+		String fileName = file.getOriginalFilename();
 		int index = fileName.indexOf(".");
 		
 		if(index == -1) {
-			return ResponseEntity.badRequest().body("File type not known - " + fileName);
+			return ResponseEntity.badRequest().body("Only files with extension .csv can be uploaded.");
 		}
 		
 		String extention = fileName.substring(index);
 		
-		if(!"csv".equals(extention)) {
-			return ResponseEntity.badRequest().body("Upload only .csv files - " + fileName);
+		if(!".csv".equals(extention)) {
+			return ResponseEntity.badRequest().body("Only files with extension .csv can be uploaded.");
 		}
 		
 		productService.bulkUploadProducts(file);
@@ -49,6 +50,10 @@ public class ProductController {
 	@GetMapping
 	public ResponseEntity<?> getAllProducts() {
 		List<Product> products = productService.getProducts();
+		
+		if(CommonUtil.isEmpty(products))
+			return ResponseEntity.noContent().build();
+		
 		return ResponseEntity.ok().body(products);
 	}
 	
