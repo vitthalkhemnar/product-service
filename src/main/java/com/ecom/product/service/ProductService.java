@@ -19,6 +19,7 @@ import org.apache.commons.csv.CSVRecord;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.ecom.product.document.Product;
@@ -52,6 +53,7 @@ public class ProductService {
 		return products;
 	}
 
+	@Transactional
 	public void bulkUploadProducts(MultipartFile file) {
 
 		try (Reader reader = new BufferedReader(
@@ -90,14 +92,15 @@ public class ProductService {
 			if(!products.isEmpty()) {
 				productRepository.saveAll(products);
 			}
-			
+						
 			if(!variants.isEmpty()) {
 				variantRepository.saveAll(variants);
 			}
-
+			
 			log.info("Products imported successfully.");
 		} catch (Exception e) {
 			log.error("Importing products failed.", e);
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -149,7 +152,6 @@ public class ProductService {
 			.attributes(attributesMap)
 			.images(List.of())
 			.status(ProductStatus.ACTIVE)
-			.createdAt(LocalDateTime.now())
 			.build();
 	}
 	
@@ -169,7 +171,7 @@ public class ProductService {
 				
 		ProductVariant variant = ProductVariant.builder()
 			.productId(Long.valueOf(productId))
-			.variantId(Long.valueOf(variantId))
+			.id(Long.valueOf(variantId))
 			.active(inStock)
 			.stock(availability)
 			.price(price)
@@ -180,7 +182,7 @@ public class ProductService {
 			variant.setColor(color);
 		
 		if(CommonUtil.isNotBlank(size))
-			variant.setColor(size);
+			variant.setSize(size);
 		
 		return variant;
 	}
