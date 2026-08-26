@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
@@ -45,7 +46,7 @@ public class ProductService {
 	
 	public List<Product> getProducts() {
 		List<Product> products = productRepository.findAll();
-		return products.stream().limit(10).toList();
+		return products.stream().limit(100).toList();
 	}
 	
 	public Page<Product> getProducts(Pageable pageable) {
@@ -53,7 +54,6 @@ public class ProductService {
 		return products;
 	}
 
-	@Transactional
 	public void bulkUploadProducts(MultipartFile file) {
 
 		try (Reader reader = new BufferedReader(
@@ -137,8 +137,12 @@ public class ProductService {
 		Double weight = Double.valueOf(row.get("weight_kg"));
 
 		LocalDate releaseDate = LocalDate.parse(row.get("release_date"), DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+		
+		String imageStr = row.get("images");
+		List<String> imagesList = CommonUtil.isBlank(imageStr) ? new ArrayList<String>() : Arrays.asList(imageStr.split(","));
+		List<String> images = imagesList.stream().map(n -> String.valueOf(n).trim()).toList();
 						
-		return Product.builder()
+		Product product = Product.builder()
 			.id(Long.valueOf(productId))
 			.productCode(productCode)
 			.productName(productName)
@@ -148,11 +152,18 @@ public class ProductService {
 			.description(description)
 			.price(price)
 			.discount(discountedPrice)
-			.material(material)
 			.attributes(attributesMap)
 			.images(List.of())
 			.status(ProductStatus.ACTIVE)
 			.build();
+		
+		if(CommonUtil.isNotBlank(material))
+			product.setMaterial(material);
+		
+		if(!CommonUtil.isEmpty(images))
+			product.setImages(images);
+		
+		return product;
 	}
 	
 	private ProductVariant mapProductVariant(CSVRecord row) {
@@ -168,6 +179,10 @@ public class ProductService {
 		Integer availability = Integer.valueOf(row.get("availability_count"));
 
 		// String sku = getSku(productCode, color, size);
+		
+		String images = row.get("images");
+		List<String> imagesList = images == null ? null : Arrays.asList(images.split(","));
+		imagesList.forEach(n -> String.valueOf(n).trim());
 				
 		ProductVariant variant = ProductVariant.builder()
 			.productId(Long.valueOf(productId))
@@ -183,6 +198,9 @@ public class ProductService {
 		
 		if(CommonUtil.isNotBlank(size))
 			variant.setSize(size);
+		
+		if(!CommonUtil.isEmpty(imagesList))
+			variant.setImage(imagesList.get(0));
 		
 		return variant;
 	}
