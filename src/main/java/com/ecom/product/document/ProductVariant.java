@@ -14,8 +14,6 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @Document(collection = "product_variants")
 public class ProductVariant {
 

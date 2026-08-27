@@ -21,8 +21,6 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @Document(collection = "products")
 public class Product {
 
