@@ -1,6 +1,8 @@
 package com.ecom.product.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/cart")
 @RequiredArgsConstructor
+@CrossOrigin("*")
 public class CartController {
 
 	private final CartService cartService;
@@ -22,6 +25,11 @@ public class CartController {
 	@PostMapping("/add")
 	public ResponseEntity<?> addToCart(@RequestBody CartItemDto cart) {
 		return ResponseEntity.ok().body(cartService.addToCart(cart));
+	}
+	
+	@DeleteMapping("/remove")
+	public ResponseEntity<?> removeFromCart(@RequestBody CartItemDto cart) {
+		return ResponseEntity.ok().body(cartService.removeFromCart(cart));
 	}
 
 	@GetMapping

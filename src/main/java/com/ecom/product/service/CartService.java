@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 
 import com.ecom.product.document.Cart;
@@ -15,7 +14,9 @@ import com.ecom.product.repository.CartRepository;
 import com.ecom.product.request.CartItemDto;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CartService {
@@ -95,5 +96,50 @@ public class CartService {
 				.quantity(i.getQuantity())
 				.build();
 		}).toList();
+	}
+
+	public List<CartItemDto> removeFromCart(CartItemDto item) {
+		
+		Cart cart = getCart();
+		List<CartItem> items = cart.getItems() == null ? new ArrayList<>() : cart.getItems();
+
+		Optional<CartItem> existingItemOpt = items.stream()
+		        .filter(i -> Objects.equals(i.getProductId(), item.productId()) &&
+		                     Objects.equals(i.getVariantId(), item.variantId()))
+		        .findFirst();
+
+		if (existingItemOpt.isPresent()) {
+		    CartItem existingItem = existingItemOpt.get();
+		    
+		    int newQuantity = existingItem.getQuantity() - item.quantity();
+		    
+		    if(newQuantity > 0)
+			    existingItem.setQuantity(existingItem.getQuantity() - item.quantity());
+		    
+		    if(newQuantity == 0)
+		    	items.remove(existingItem);
+		    
+		    if(newQuantity < 0)
+		    	log.info("Don't have items to remove.");
+		    
+		    // int index = items.indexOf(existingItem);
+		    // items.set(index, existingItem.toBuilder()
+		    //         .quantity(existingItem.getQuantity() + item.quantity())
+		    //         .build());
+		    
+		    cart = cartRepository.save(cart);
+		}
+		
+		
+		List<CartItemDto> cartItems = cart.getItems().stream().map(i -> {
+			return CartItemDto.builder()
+				.productId(i.getProductId())
+				.variantId(i.getVariantId())
+				.price(i.getPriceAtAddition())
+				.quantity(i.getQuantity())
+				.build();
+		}).toList();
+		
+		return cartItems;
 	}
 }
