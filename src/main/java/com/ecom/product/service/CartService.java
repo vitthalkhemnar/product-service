@@ -12,6 +12,7 @@ import com.ecom.product.document.Cart;
 import com.ecom.product.document.CartItem;
 import com.ecom.product.repository.CartRepository;
 import com.ecom.product.request.CartItemDto;
+import com.ecom.product.util.CommonUtil;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -69,11 +70,12 @@ public class CartService {
 	}
 	
 	public Cart getCart() {
-		Optional<Cart> cartOpt = cartRepository.findByUsername("vitthal");
+		String username = CommonUtil.getCurrentUsername();
+		Optional<Cart> cartOpt = cartRepository.findByUsername(username);
 
 		if (cartOpt.isEmpty()) {
 			Cart cart = Cart.builder()
-				.username("vitthal")
+				.username(username)
 				.build();
 			
 			return cartRepository.save(cart);
