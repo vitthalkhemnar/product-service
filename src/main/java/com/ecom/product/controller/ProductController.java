@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.ecom.product.document.Product;
+import com.ecom.product.dto.ProductResponse;
 import com.ecom.product.service.ProductService;
 import com.ecom.product.util.CommonUtil;
 
@@ -49,7 +50,7 @@ public class ProductController {
 	
 	@GetMapping
 	public ResponseEntity<?> getAllProducts() {
-		List<Product> products = productService.getProducts();
+		List<ProductResponse> products = productService.getProducts();
 		
 		if(CommonUtil.isEmpty(products))
 			return ResponseEntity.noContent().build();

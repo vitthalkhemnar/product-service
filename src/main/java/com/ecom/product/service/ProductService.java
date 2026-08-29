@@ -6,7 +6,6 @@ import java.io.Reader;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,11 +19,12 @@ import org.apache.commons.csv.CSVRecord;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.ecom.product.document.Product;
 import com.ecom.product.document.ProductVariant;
+import com.ecom.product.dto.ProductResponse;
+import com.ecom.product.dto.ProductVariantResponse;
 import com.ecom.product.repository.ProductRepository;
 import com.ecom.product.repository.ProductVariantRepository;
 import com.ecom.product.util.CommonUtil;
@@ -44,9 +44,9 @@ public class ProductService {
 	private final ProductRepository productRepository;
 	private final ProductVariantRepository variantRepository;
 	
-	public List<Product> getProducts() {
+	public List<ProductResponse> getProducts() {
 		List<Product> products = productRepository.findAll();
-		return products.stream().limit(100).toList();
+		return products.stream().limit(100).map(this::mapToProductResponse).toList();
 	}
 	
 	public Page<Product> getProducts(Pageable pageable) {
@@ -220,4 +220,26 @@ public class ProductService {
 			default -> SkuConstants.NA;
 		};
 	}
+	
+	public ProductResponse mapToProductResponse(Product product) {
+        if (product == null) {
+            return null;
+        }
+
+        return new ProductResponse(
+            product.getId(),
+            product.getProductCode(),
+            product.getProductName(),
+            product.getDescription(),
+            product.getCategory(),
+            product.getSubcategory(),
+            product.getBrand(),
+            product.getPrice(),
+            product.getDiscount(),
+            product.getMaterial(),
+            product.getAttributes(),
+            product.getImages(),
+            product.getStatus()
+        );
+    }
 }

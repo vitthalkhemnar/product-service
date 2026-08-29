@@ -10,8 +10,8 @@ import org.springframework.stereotype.Service;
 
 import com.ecom.product.document.Cart;
 import com.ecom.product.document.CartItem;
+import com.ecom.product.dto.CartItemDto;
 import com.ecom.product.repository.CartRepository;
-import com.ecom.product.request.CartItemDto;
 import com.ecom.product.util.CommonUtil;
 
 import lombok.RequiredArgsConstructor;

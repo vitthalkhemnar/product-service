@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ecom.product.request.CartItemDto;
+import com.ecom.product.dto.CartItemDto;
 import com.ecom.product.service.CartService;
 
 import lombok.RequiredArgsConstructor;

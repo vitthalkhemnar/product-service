@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ecom.product.document.ProductVariant;
+import com.ecom.product.dto.ProductVariantResponse;
 import com.ecom.product.service.ProductVariantService;
 
 import lombok.RequiredArgsConstructor;
@@ -22,7 +23,7 @@ public class ProductVariantController {
 
 	@GetMapping("/{productId}")
 	public ResponseEntity<?> getMethodName(@PathVariable("productId") Long productId) {
-		List<ProductVariant> variants = variantService.getProductVariants(productId);
+		List<ProductVariantResponse> variants = variantService.getProductVariants(productId);
 		return ResponseEntity.ok().body(variants);
 	}
 
