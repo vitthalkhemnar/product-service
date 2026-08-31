@@ -29,10 +29,10 @@ public class SecurityConfig {
 		http.cors(Customizer.withDefaults())
 			.csrf(csrf -> csrf.disable())
 			.authorizeHttpRequests(requests -> requests
-					.requestMatchers(HttpMethod.GET, "/products/**").permitAll()
-					.requestMatchers(HttpMethod.POST, "/products/**", "/variant/**").hasRole("ADMIN")
-			        .requestMatchers(HttpMethod.PUT, "/products/**", "/variant/**").hasRole("ADMIN")
-			        .requestMatchers(HttpMethod.DELETE, "/products/**", "/variant/**").hasRole("ADMIN")
+					.requestMatchers(HttpMethod.GET, "/product/**", "/variant/**").permitAll()
+					.requestMatchers(HttpMethod.POST, "/product/**", "/variant/**").hasRole("ADMIN")
+			        .requestMatchers(HttpMethod.PUT, "/product/**", "/variant/**").hasRole("ADMIN")
+			        .requestMatchers(HttpMethod.DELETE, "/product/**", "/variant/**").hasRole("ADMIN")
 					.anyRequest().authenticated()
 			)
 			.sessionManagement(session -> session

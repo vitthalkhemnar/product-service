@@ -21,6 +21,15 @@ import jakarta.servlet.http.HttpServletResponse;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 	private static final String SECRET_STRING = "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970";
+	
+	private static final List<String> PUBLIC_PATHS = List.of("/product", "/variant");
+	
+	@Override
+	protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+		String path = request.getServletPath();
+		String method = request.getMethod();
+		return PUBLIC_PATHS.stream().anyMatch(path::startsWith) && "GET".equals(method);
+	}
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
