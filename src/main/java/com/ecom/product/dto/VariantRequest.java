@@ -2,10 +2,9 @@ package com.ecom.product.dto;
 
 import java.math.BigDecimal;
 
-public record ProductVariantResponse(
-    Long variantId,
-    Long productId,
-    String sku,
+public record VariantRequest (
+	Long productId,
+	Long variantId,
     String color,
     String size,
     BigDecimal price,

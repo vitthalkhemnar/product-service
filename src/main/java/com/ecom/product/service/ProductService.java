@@ -22,9 +22,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.ecom.product.document.Product;
+import com.ecom.product.document.Product.ProductBuilder;
 import com.ecom.product.document.ProductVariant;
+import com.ecom.product.dto.ProductRequest;
 import com.ecom.product.dto.ProductResponse;
-import com.ecom.product.dto.ProductVariantResponse;
 import com.ecom.product.repository.ProductRepository;
 import com.ecom.product.repository.ProductVariantRepository;
 import com.ecom.product.util.CommonUtil;
@@ -142,7 +143,7 @@ public class ProductService {
 		List<String> imagesList = CommonUtil.isBlank(imageStr) ? new ArrayList<String>() : Arrays.asList(imageStr.split(","));
 		List<String> images = imagesList.stream().map(n -> String.valueOf(n).trim()).toList();
 						
-		Product product = Product.builder()
+		var productBuilder = Product.builder()
 			.id(Long.valueOf(productId))
 			.productCode(productCode)
 			.productName(productName)
@@ -154,16 +155,15 @@ public class ProductService {
 			.discount(discountedPrice)
 			.attributes(attributesMap)
 			.images(List.of())
-			.status(ProductStatus.ACTIVE)
-			.build();
+			.status(ProductStatus.ACTIVE);
 		
 		if(CommonUtil.isNotBlank(material))
-			product.setMaterial(material);
+			productBuilder.material(material);
 		
 		if(!CommonUtil.isEmpty(images))
-			product.setImages(images);
+			productBuilder.images(images);
 		
-		return product;
+		return productBuilder.build();
 	}
 	
 	private ProductVariant mapProductVariant(CSVRecord row) {
@@ -242,4 +242,31 @@ public class ProductService {
             product.getStatus()
         );
     }
+
+	public ProductResponse updateProduct(ProductRequest req) {
+		
+		Product product = productRepository.findById(req.productId())
+				.orElseThrow(() -> new RuntimeException("Entity not found."));
+		
+		ProductBuilder productBuilder = product.toBuilder()
+				.productCode(req.productCode())
+				.productName(req.productName())
+				.brand(req.brand())
+				.category(req.category())
+				.subcategory(req.subcategory())
+				.description(req.description())
+				.price(req.price())
+				.discount(req.discount())
+				.attributes(req.attributes())
+				.images(req.images())
+				.status(req.status());
+			
+			if(CommonUtil.isNotBlank(req.material()))
+				productBuilder.material(req.material());
+			
+			if(!CommonUtil.isEmpty(req.images()))
+				productBuilder.images(req.images());
+		
+		return mapToProductResponse(productBuilder.build());
+	}
 }
