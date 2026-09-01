@@ -7,7 +7,7 @@ import java.util.Map;
 import com.ecom.product.util.ProductStatus;
 
 public record ProductRequest(
-	Long productId,
+	Long id,
     String productCode,
     String productName,
     String description,

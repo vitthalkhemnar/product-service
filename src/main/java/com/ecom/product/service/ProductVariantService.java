@@ -28,7 +28,17 @@ public class ProductVariantService {
 	
 	public boolean deleteVariantById(Long variantId) {
 		try {
+			ProductVariant variant = variantRepository.findById(variantId)
+					.orElseThrow(() -> new RuntimeException("Entity not found."));
+			
+			Long productId = variant.getProductId();
 			variantRepository.deleteById(variantId);
+			
+			List<ProductVariant> variantList = variantRepository.findByProductId(productId);
+			if(variantList == null || variantList.isEmpty()) {
+				productRepository.deleteById(productId);
+			}
+			
 			return true;
 		} catch (Exception e) {
 			log.error("Error while deleting variant with variantId: {}", variantId);

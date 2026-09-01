@@ -245,7 +245,7 @@ public class ProductService {
 
 	public ProductResponse updateProduct(ProductRequest req) {
 		
-		Product product = productRepository.findById(req.productId())
+		Product product = productRepository.findById(req.id())
 				.orElseThrow(() -> new RuntimeException("Entity not found."));
 		
 		ProductBuilder productBuilder = product.toBuilder()
@@ -266,7 +266,19 @@ public class ProductService {
 			
 			if(!CommonUtil.isEmpty(req.images()))
 				productBuilder.images(req.images());
+			
+			Product savedProduct = productRepository.save(productBuilder.build());
 		
-		return mapToProductResponse(productBuilder.build());
+		return mapToProductResponse(savedProduct);
+	}
+	
+	public boolean deleteProduct(Long productId) {
+		try {
+			productRepository.deleteById(productId);
+			return true;
+		} catch (Exception e) {
+			log.error("Error while deleting prouduct with productId: {}", productId);
+			return false;
+		}
 	}
 }

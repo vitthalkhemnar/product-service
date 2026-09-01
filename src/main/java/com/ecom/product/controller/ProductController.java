@@ -7,7 +7,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -68,7 +70,12 @@ public class ProductController {
 	}
 
 	@PutMapping
-	public ResponseEntity<?> addVariant(@RequestBody ProductRequest req) {
+	public ResponseEntity<?> updateProduct(@RequestBody ProductRequest req) {
 		return ResponseEntity.ok().body(productService.updateProduct(req));
+	}
+	
+	@DeleteMapping("/{productId}")
+	public ResponseEntity<?> deleteProduct(@PathVariable("productId") Long productId) {
+		return ResponseEntity.ok().body(productService.deleteProduct(productId));
 	}
 }

@@ -35,14 +35,14 @@ public class ProductVariantController {
 	public ResponseEntity<?> addVariant(@RequestBody VariantRequest req) {
 		return ResponseEntity.ok().body(variantService.addVariant(req));
 	}
-
-	@DeleteMapping("/{variantId}")
-	public ResponseEntity<?> deleteVariant(@PathVariable("variantId") Long variantId) {
-		return ResponseEntity.ok().body(variantService.deleteVariantById(variantId));
-	}
 	
 	@PutMapping
 	public ResponseEntity<?> updateVariant(@RequestBody VariantRequest req) {
 		return ResponseEntity.ok().body(variantService.updateVariant(req));
+	}
+	
+	@DeleteMapping("/{variantId}")
+	public ResponseEntity<?> deleteVariant(@PathVariable("variantId") Long variantId) {
+		return ResponseEntity.ok().body(variantService.deleteVariantById(variantId));
 	}
 }
