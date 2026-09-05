@@ -2,6 +2,7 @@ package com.ecom.product.service;
 
 import java.util.List;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import com.ecom.product.document.Product;
@@ -22,6 +23,7 @@ public class ProductVariantService {
 	private final ProductVariantRepository variantRepository;
 	private final ProductRepository productRepository;
 	
+	@Cacheable(value = "productService", key="'variant' + #productId")
 	public List<VariantResponse> getProductVariantsByProductId(Long productId) {
 		return variantRepository.findByProductId(productId).stream().map(this::mapToVariantResponse).toList();	
 	}

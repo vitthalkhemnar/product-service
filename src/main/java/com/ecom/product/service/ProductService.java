@@ -16,6 +16,7 @@ import java.util.StringJoiner;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -45,14 +46,15 @@ public class ProductService {
 	private final ProductRepository productRepository;
 	private final ProductVariantRepository variantRepository;
 	
+	@Cacheable(value = "productService", key="'products'")
 	public List<ProductResponse> getProducts() {
 		List<Product> products = productRepository.findAll();
-		return products.stream().limit(100).map(this::mapToProductResponse).toList();
+		return products.stream().map(this::mapToProductResponse).toList();
 	}
 	
+	@Cacheable(value = "productService", key="'productsPage'")
 	public Page<Product> getProducts(Pageable pageable) {
-		Page<Product> products = productRepository.findAll(pageable);
-		return products;
+		return productRepository.findAll(pageable);
 	}
 
 	public void bulkUploadProducts(MultipartFile file) {
@@ -177,11 +179,9 @@ public class ProductService {
 		Boolean inStock = "Yes".equalsIgnoreCase(row.get("in_stock"));
 		BigDecimal price = new BigDecimal(row.get("price"));
 		Integer availability = Integer.valueOf(row.get("availability_count"));
-
-		// String sku = getSku(productCode, color, size);
 		
 		String images = row.get("images");
-		List<String> imagesList = images == null ? null : Arrays.asList(images.split(","));
+		List<String> imagesList = images == null ? new ArrayList<>() : Arrays.asList(images.split(","));
 		imagesList.forEach(n -> String.valueOf(n).trim());
 				
 		ProductVariant variant = ProductVariant.builder()
