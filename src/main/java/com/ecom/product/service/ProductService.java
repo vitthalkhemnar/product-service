@@ -16,6 +16,8 @@ import java.util.StringJoiner;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -55,6 +57,47 @@ public class ProductService {
 	@Cacheable(value = "productService", key="'productsPage'")
 	public Page<Product> getProducts(Pageable pageable) {
 		return productRepository.findAll(pageable);
+	}
+	
+	@CacheEvict(value = "productService", key="'products'")
+	public ProductResponse updateProduct(ProductRequest req) {
+		
+		Product product = productRepository.findById(req.id())
+				.orElseThrow(() -> new RuntimeException("Entity not found."));
+		
+		ProductBuilder productBuilder = product.toBuilder()
+				.productCode(req.productCode())
+				.productName(req.productName())
+				.brand(req.brand())
+				.category(req.category())
+				.subcategory(req.subcategory())
+				.description(req.description())
+				.price(req.price())
+				.discount(req.discount())
+				.attributes(req.attributes())
+				.images(req.images())
+				.status(req.status());
+			
+			if(CommonUtil.isNotBlank(req.material()))
+				productBuilder.material(req.material());
+			
+			if(!CommonUtil.isEmpty(req.images()))
+				productBuilder.images(req.images());
+			
+			Product savedProduct = productRepository.save(productBuilder.build());
+		
+		return mapToProductResponse(savedProduct);
+	}
+	
+	@CacheEvict(value = "productService", key="'products'")
+	public boolean deleteProduct(Long productId) {
+		try {
+			productRepository.deleteById(productId);
+			return true;
+		} catch (Exception e) {
+			log.error("Error while deleting prouduct with productId: {}", productId);
+			return false;
+		}
 	}
 
 	public void bulkUploadProducts(MultipartFile file) {
@@ -242,43 +285,4 @@ public class ProductService {
             product.getStatus()
         );
     }
-
-	public ProductResponse updateProduct(ProductRequest req) {
-		
-		Product product = productRepository.findById(req.id())
-				.orElseThrow(() -> new RuntimeException("Entity not found."));
-		
-		ProductBuilder productBuilder = product.toBuilder()
-				.productCode(req.productCode())
-				.productName(req.productName())
-				.brand(req.brand())
-				.category(req.category())
-				.subcategory(req.subcategory())
-				.description(req.description())
-				.price(req.price())
-				.discount(req.discount())
-				.attributes(req.attributes())
-				.images(req.images())
-				.status(req.status());
-			
-			if(CommonUtil.isNotBlank(req.material()))
-				productBuilder.material(req.material());
-			
-			if(!CommonUtil.isEmpty(req.images()))
-				productBuilder.images(req.images());
-			
-			Product savedProduct = productRepository.save(productBuilder.build());
-		
-		return mapToProductResponse(savedProduct);
-	}
-	
-	public boolean deleteProduct(Long productId) {
-		try {
-			productRepository.deleteById(productId);
-			return true;
-		} catch (Exception e) {
-			log.error("Error while deleting prouduct with productId: {}", productId);
-			return false;
-		}
-	}
 }

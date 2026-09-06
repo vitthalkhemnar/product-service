@@ -2,6 +2,7 @@ package com.ecom.product.service;
 
 import java.util.List;
 
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +29,7 @@ public class ProductVariantService {
 		return variantRepository.findByProductId(productId).stream().map(this::mapToVariantResponse).toList();	
 	}
 	
+	@CacheEvict(value = "productService", allEntries = true)
 	public boolean deleteVariantById(Long variantId) {
 		try {
 			ProductVariant variant = variantRepository.findById(variantId)
@@ -43,11 +45,12 @@ public class ProductVariantService {
 			
 			return true;
 		} catch (Exception e) {
-			log.error("Error while deleting variant with variantId: {}", variantId);
+			log.error("Error while deleting variant with variantId: {}", variantId, e);
 		}
 		return false;
 	}
 	
+	@CacheEvict(value = "productService", key="'variant' + #productId")
 	public VariantResponse updateVariant(VariantRequest req) {
 
 		ProductVariant variant = variantRepository.findById(req.variantId())
@@ -74,6 +77,7 @@ public class ProductVariantService {
 		return mapToVariantResponse(savedVariant);
 	}
 	
+	@CacheEvict(value = "productService", key="'variant' + #productId")
 	public VariantResponse addVariant(VariantRequest req) {
 		
 		Product product = productRepository.findById(req.productId())
