@@ -74,6 +74,11 @@ public class ProductController {
 		return ResponseEntity.ok().body(products);
 	}
 
+	@PostMapping
+	public ResponseEntity<?> createProduct(@RequestBody ProductRequest req) {
+		return ResponseEntity.ok().body(productService.createProduct(req));
+	}
+
 	@PutMapping
 	public ResponseEntity<?> updateProduct(@RequestBody ProductRequest req) {
 		return ResponseEntity.ok().body(productService.updateProduct(req));

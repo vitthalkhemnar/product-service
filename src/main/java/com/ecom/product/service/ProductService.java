@@ -67,6 +67,46 @@ public class ProductService {
 	}
 
 	@CacheEvict(value = "productService", allEntries = true)
+	public ProductResponse createProduct(ProductRequest req) {
+		Long productId = (req.id() != null) ? req.id() : System.currentTimeMillis();
+		
+		String productCode = CommonUtil.isNotBlank(req.productCode()) 
+				? req.productCode() 
+				: generateProductCode(req.category(), req.subcategory(), req.brand(), productId);
+
+		Product.ProductBuilder productBuilder = Product.builder()
+				.id(productId)
+				.productCode(productCode)
+				.productName(req.productName())
+				.brand(req.brand())
+				.category(req.category())
+				.subcategory(req.subcategory())
+				.description(req.description())
+				.price(req.price() != null ? req.price() : BigDecimal.ZERO)
+				.discount(req.discount() != null ? req.discount() : BigDecimal.ZERO)
+				.attributes(req.attributes() != null ? req.attributes() : Map.of())
+				.images(req.images() != null ? req.images() : List.of())
+				.status(req.status() != null ? req.status() : ProductStatus.ACTIVE);
+
+		if (CommonUtil.isNotBlank(req.material())) {
+			productBuilder.material(req.material());
+		}
+
+		Product savedProduct = productRepository.save(productBuilder.build());
+		return mapToProductResponse(savedProduct);
+	}
+
+	private String generateProductCode(String category, String subcategory, String brand, Long productId) {
+		String catCode = (category != null && SkuConstants.CATEGORY.containsKey(category)) 
+				? SkuConstants.CATEGORY.get(category) : (category != null && category.length() >= 3 ? category.substring(0, 3).toUpperCase() : "GEN");
+		String subCatCode = (subcategory != null && SkuConstants.SUBCATEGORY.containsKey(subcategory)) 
+				? SkuConstants.SUBCATEGORY.get(subcategory) : (subcategory != null && subcategory.length() >= 3 ? subcategory.substring(0, 3).toUpperCase() : "GEN");
+		String brandCode = (brand != null && SkuConstants.BRAND.containsKey(brand)) 
+				? SkuConstants.BRAND.get(brand) : (brand != null && brand.length() >= 3 ? brand.substring(0, 3).toUpperCase() : "GEN");
+		return catCode + "-" + subCatCode + "-" + brandCode + "-" + (productId % 100000);
+	}
+
+	@CacheEvict(value = "productService", allEntries = true)
 	public ProductResponse updateProduct(ProductRequest req) {
 		
 		Product product = productRepository.findById(req.id())

@@ -12,6 +12,8 @@ import com.ecom.product.dto.VariantResponse;
 import com.ecom.product.dto.VariantRequest;
 import com.ecom.product.repository.ProductRepository;
 import com.ecom.product.repository.ProductVariantRepository;
+import com.ecom.product.util.CommonUtil;
+import com.ecom.product.util.SkuConstants;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -77,18 +79,17 @@ public class ProductVariantService {
 		return mapToVariantResponse(savedVariant);
 	}
 	
-	@CacheEvict(value = "productService", key="'variant' + #productId")
+	@CacheEvict(value = "productService", allEntries = true)
 	public VariantResponse addVariant(VariantRequest req) {
 		
 		Product product = productRepository.findById(req.productId())
 				.orElseThrow(() -> new RuntimeException("Entity not found."));
 		
-		if(req.variantId() == null)
-			throw new RuntimeException("Variant Id should not be null.");
+		Long variantId = (req.variantId() != null) ? req.variantId() : System.currentTimeMillis();
 
 		ProductVariant variant = new ProductVariant();
 
-		variant.setId(req.variantId());
+		variant.setId(variantId);
 		variant.setProductId(product.getId());
 		variant.setActive(req.active());
 
@@ -100,15 +101,32 @@ public class ProductVariantService {
 
 		if (req.price() != null)
 			variant.setPrice(req.price());
+		else
+			variant.setPrice(product.getPrice());
 
 		if (req.image() != null)
 			variant.setImage(req.image());
+		else if (product.getImages() != null && !product.getImages().isEmpty())
+			variant.setImage(product.getImages().get(0));
 
-		if (req.stock() != null || req.stock() >= 0)
+		if (req.stock() != null)
 			variant.setStock(req.stock());
+		else
+			variant.setStock(0);
+
+		String sku = generateVariantSku(product.getProductCode(), req.color(), req.size(), variantId);
+		variant.setSku(sku);
 
 		ProductVariant savedVariant = variantRepository.save(variant);
 		return mapToVariantResponse(savedVariant);
+	}
+
+	private String generateVariantSku(String productCode, String color, String size, Long variantId) {
+		String colorCode = (color != null && SkuConstants.COLOR.containsKey(color)) 
+				? SkuConstants.COLOR.get(color) : (CommonUtil.isNotBlank(color) ? color.toUpperCase() : SkuConstants.NA);
+		String sizeCode = (size != null && SkuConstants.SIZE.containsKey(size)) 
+				? SkuConstants.SIZE.get(size) : (CommonUtil.isNotBlank(size) ? size.toUpperCase() : SkuConstants.NA);
+		return (productCode != null ? productCode : "PRD") + "-" + colorCode + "-" + sizeCode + "-" + (variantId % 100000);
 	}
 
 	public VariantResponse mapToVariantResponse(ProductVariant variant) {
