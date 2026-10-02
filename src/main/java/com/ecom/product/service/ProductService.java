@@ -59,7 +59,14 @@ public class ProductService {
 		return productRepository.findAll(pageable);
 	}
 	
-	@CacheEvict(value = "productService", key="'products'")
+	@Cacheable(value = "productService", key="'product' + #productId")
+	public ProductResponse getProductById(Long productId) {
+		return productRepository.findById(productId)
+				.map(this::mapToProductResponse)
+				.orElse(null);
+	}
+
+	@CacheEvict(value = "productService", allEntries = true)
 	public ProductResponse updateProduct(ProductRequest req) {
 		
 		Product product = productRepository.findById(req.id())
@@ -89,7 +96,7 @@ public class ProductService {
 		return mapToProductResponse(savedProduct);
 	}
 	
-	@CacheEvict(value = "productService", key="'products'")
+	@CacheEvict(value = "productService", allEntries = true)
 	public boolean deleteProduct(Long productId) {
 		try {
 			productRepository.deleteById(productId);
@@ -100,6 +107,7 @@ public class ProductService {
 		}
 	}
 
+	@CacheEvict(value = "productService", allEntries = true)
 	public void bulkUploadProducts(MultipartFile file) {
 
 		try (Reader reader = new BufferedReader(

@@ -56,11 +56,16 @@ public class ProductController {
 	@GetMapping
 	public ResponseEntity<?> getAllProducts() {
 		List<ProductResponse> products = productService.getProducts();
-		
-		if(CommonUtil.isEmpty(products))
-			return ResponseEntity.noContent().build();
-		
 		return ResponseEntity.ok().body(products);
+	}
+	
+	@GetMapping("/{productId}")
+	public ResponseEntity<?> getProductById(@PathVariable("productId") Long productId) {
+		ProductResponse product = productService.getProductById(productId);
+		if (product == null) {
+			return ResponseEntity.notFound().build();
+		}
+		return ResponseEntity.ok().body(product);
 	}
 	
 	@GetMapping("/page")
