@@ -28,6 +28,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
 		String path = request.getServletPath();
 		String method = request.getMethod();
+		if (path != null && (path.startsWith("/swagger-ui") || path.startsWith("/v3/api-docs"))) {
+			return true;
+		}
 		return PUBLIC_PATHS.stream().anyMatch(path::startsWith) && "GET".equals(method);
 	}
 
@@ -36,6 +39,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 			throws ServletException, IOException {
 
 		String authHeader = request.getHeader("Authorization");
+		if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+			filterChain.doFilter(request, response);
+			return;
+		}
 		String token = authHeader.substring(7);
 
 		try {
