@@ -223,7 +223,7 @@ public class ProductService {
 		BigDecimal price = new BigDecimal(row.get("price"));
 		BigDecimal discountedPrice = new BigDecimal(row.get("discounted_price"));
 
-		Integer discount = Integer.valueOf(row.get("discount_percent"));
+		BigDecimal discount = new BigDecimal(row.get("discount_percent"));
 		Integer availability = Integer.valueOf(row.get("availability_count"));
 		Integer reviews = Integer.valueOf(row.get("num_reviews"));
 
@@ -245,7 +245,7 @@ public class ProductService {
 			.subcategory(subcategory)
 			.description(description)
 			.price(price)
-			.discount(discountedPrice)
+			.discount(discount)
 			.attributes(attributesMap)
 			.images(List.of())
 			.status(ProductStatus.ACTIVE);
