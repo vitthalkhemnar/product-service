@@ -33,9 +33,9 @@ public class SecurityConfig {
 			.authorizeHttpRequests(requests -> requests
 					.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 					.requestMatchers(HttpMethod.GET, "/product/**", "/variant/**").permitAll()
-					.requestMatchers(HttpMethod.POST, "/product/**", "/variant/**").hasRole("ADMIN")
-			        .requestMatchers(HttpMethod.PUT, "/product/**", "/variant/**").hasRole("ADMIN")
-			        .requestMatchers(HttpMethod.DELETE, "/product/**", "/variant/**").hasRole("ADMIN")
+					.requestMatchers(HttpMethod.POST, "/product", "/product/**", "/variant", "/variant/**").hasRole("ADMIN")
+			        .requestMatchers(HttpMethod.PUT, "/product", "/product/**", "/variant", "/variant/**").hasRole("ADMIN")
+			        .requestMatchers(HttpMethod.DELETE, "/product", "/product/**", "/variant", "/variant/**").hasRole("ADMIN")
 					.anyRequest().authenticated()
 			)
 			.sessionManagement(session -> session
