@@ -70,7 +70,7 @@ public class ProductVariantService {
 		if (req.image() != null)
 			variant.setImage(req.image());
 
-		if (req.stock() != null || req.stock() >= 0)
+		if (req.stock() != null && req.stock() >= 0)
 			variant.setStock(req.stock());
 
 		variant.setActive(req.active());
