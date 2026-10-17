@@ -52,7 +52,7 @@ public class ProductVariantService {
 		return false;
 	}
 	
-	@CacheEvict(value = "productService", key="'variant' + #productId")
+	@CacheEvict(value = "productService", allEntries = true)
 	public VariantResponse updateVariant(VariantRequest req) {
 
 		ProductVariant variant = variantRepository.findById(req.variantId())
