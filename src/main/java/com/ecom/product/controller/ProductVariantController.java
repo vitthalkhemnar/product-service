@@ -41,6 +41,21 @@ public class ProductVariantController {
 		List<VariantResponse> variants = variantService.getProductVariantsByProductId(productId);
 		return ResponseEntity.ok().body(variants);
 	}
+
+	@Operation(
+		summary = "Get variant by ID",
+		description = "Retrieve details for a specific variant by its ID. Public endpoint."
+	)
+	@GetMapping("/item/{variantId}")
+	public ResponseEntity<VariantResponse> getVariantById(
+			@Parameter(description = "Variant ID to fetch", required = true, example = "501")
+			@PathVariable("variantId") Long variantId) {
+		VariantResponse variant = variantService.getVariantById(variantId);
+		if (variant == null) {
+			return ResponseEntity.notFound().build();
+		}
+		return ResponseEntity.ok().body(variant);
+	}
 	
 	@Operation(
 		summary = "Add a new variant",

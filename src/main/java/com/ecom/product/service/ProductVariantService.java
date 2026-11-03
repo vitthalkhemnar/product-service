@@ -30,6 +30,15 @@ public class ProductVariantService {
 	public List<VariantResponse> getProductVariantsByProductId(Long productId) {
 		return variantRepository.findByProductId(productId).stream().map(this::mapToVariantResponse).toList();	
 	}
+
+	public VariantResponse getVariantById(Long variantId) {
+		if (variantId == null) {
+			return null;
+		}
+		return variantRepository.findById(variantId)
+				.map(this::mapToVariantResponse)
+				.orElse(null);
+	}
 	
 	@CacheEvict(value = "productService", allEntries = true)
 	public boolean deleteVariantById(Long variantId) {
