@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ecom.product.dto.StockUpdateRequest;
 import com.ecom.product.dto.VariantRequest;
 import com.ecom.product.dto.VariantResponse;
 import com.ecom.product.service.ProductVariantService;
@@ -55,6 +56,26 @@ public class ProductVariantController {
 			return ResponseEntity.notFound().build();
 		}
 		return ResponseEntity.ok().body(variant);
+	}
+
+	@Operation(
+		summary = "Deduct inventory stock",
+		description = "Atomically verify and deduct stock for one or more variants upon order placement. Requires authentication.",
+		security = @SecurityRequirement(name = "bearerAuth")
+	)
+	@PostMapping("/stock/deduct")
+	public ResponseEntity<Boolean> deductStock(@RequestBody List<StockUpdateRequest> items) {
+		return ResponseEntity.ok(variantService.deductStock(items));
+	}
+
+	@Operation(
+		summary = "Restore inventory stock",
+		description = "Restore stock for one or more variants upon order cancellation or checkout failure. Requires authentication.",
+		security = @SecurityRequirement(name = "bearerAuth")
+	)
+	@PostMapping("/stock/restore")
+	public ResponseEntity<Boolean> restoreStock(@RequestBody List<StockUpdateRequest> items) {
+		return ResponseEntity.ok(variantService.restoreStock(items));
 	}
 	
 	@Operation(

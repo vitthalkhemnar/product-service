@@ -33,6 +33,7 @@ public class SecurityConfig {
 			.authorizeHttpRequests(requests -> requests
 					.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 					.requestMatchers(HttpMethod.GET, "/product", "/product/**", "/variant", "/variant/**").permitAll()
+					.requestMatchers("/variant/stock/**").authenticated()
 					.requestMatchers(HttpMethod.POST, "/product", "/product/**", "/variant", "/variant/**").hasRole("ADMIN")
 			        .requestMatchers(HttpMethod.PUT, "/product", "/product/**", "/variant", "/variant/**").hasRole("ADMIN")
 			        .requestMatchers(HttpMethod.DELETE, "/product", "/product/**", "/variant", "/variant/**").hasRole("ADMIN")
@@ -57,7 +58,7 @@ public class SecurityConfig {
 		
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 		source.registerCorsConfiguration("/**", corsConfiguration);
-		
 		return source;
 	}
+
 }

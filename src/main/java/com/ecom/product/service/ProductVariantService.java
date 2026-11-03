@@ -1,15 +1,23 @@
 package com.ecom.product.service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.ecom.product.document.Product;
 import com.ecom.product.document.ProductVariant;
-import com.ecom.product.dto.VariantResponse;
+import com.ecom.product.dto.StockUpdateRequest;
 import com.ecom.product.dto.VariantRequest;
+import com.ecom.product.dto.VariantResponse;
 import com.ecom.product.repository.ProductRepository;
 import com.ecom.product.repository.ProductVariantRepository;
 import com.ecom.product.util.CommonUtil;
@@ -25,6 +33,7 @@ public class ProductVariantService {
 
 	private final ProductVariantRepository variantRepository;
 	private final ProductRepository productRepository;
+	private final MongoTemplate mongoTemplate;
 	
 	@Cacheable(value = "productService", key="'variant' + #productId")
 	public List<VariantResponse> getProductVariantsByProductId(Long productId) {
@@ -128,6 +137,82 @@ public class ProductVariantService {
 
 		ProductVariant savedVariant = variantRepository.save(variant);
 		return mapToVariantResponse(savedVariant);
+	}
+
+	@Transactional
+	@CacheEvict(value = "productService", allEntries = true)
+	public boolean deductStock(List<StockUpdateRequest> items) {
+		if (items == null || items.isEmpty()) {
+			return true;
+		}
+
+		// 1. First pass: verify availability of each requested item
+		for (StockUpdateRequest item : items) {
+			if (item.variantId() == null) {
+				throw new IllegalArgumentException("Variant ID is required for stock deduction.");
+			}
+			if (item.quantity() == null || item.quantity() <= 0) {
+				throw new IllegalArgumentException("Quantity must be greater than zero for variant ID: " + item.variantId());
+			}
+
+			ProductVariant variant = variantRepository.findById(item.variantId())
+					.orElseThrow(() -> new IllegalArgumentException("Variant not found with ID: " + item.variantId()));
+
+			if (!variant.isActive()) {
+				throw new IllegalArgumentException("Variant " + (variant.getSku() != null ? variant.getSku() : item.variantId()) + " is not currently active.");
+			}
+
+			int currentStock = (variant.getStock() != null) ? variant.getStock() : 0;
+			if (currentStock < item.quantity()) {
+				throw new IllegalArgumentException(String.format(
+						"Insufficient stock for variant %s. Requested: %d, Available: %d",
+						variant.getSku() != null ? variant.getSku() : String.valueOf(item.variantId()),
+						item.quantity(),
+						currentStock
+				));
+			}
+		}
+
+		// 2. Second pass: perform atomic decrements
+		List<StockUpdateRequest> successfulDeductions = new ArrayList<>();
+		for (StockUpdateRequest item : items) {
+			Query query = new Query(Criteria.where("_id").is(item.variantId()).and("stock").gte(item.quantity()));
+			Update update = new Update().inc("stock", -item.quantity());
+			ProductVariant updated = mongoTemplate.findAndModify(query, update, FindAndModifyOptions.options().returnNew(true), ProductVariant.class);
+
+			if (updated == null) {
+				// Concurrent purchase occurred between first-pass check and decrement:
+				// Compensate any items deducted in this batch before failing
+				if (!successfulDeductions.isEmpty()) {
+					restoreStock(successfulDeductions);
+				}
+				throw new IllegalStateException("Stock deduction failed due to concurrent order for variant ID: " + item.variantId() + ". Please try again.");
+			}
+			successfulDeductions.add(item);
+		}
+
+		log.info("Successfully deducted inventory stock for {} variant(s)", items.size());
+		return true;
+	}
+
+	@Transactional
+	@CacheEvict(value = "productService", allEntries = true)
+	public boolean restoreStock(List<StockUpdateRequest> items) {
+		if (items == null || items.isEmpty()) {
+			return true;
+		}
+
+		for (StockUpdateRequest item : items) {
+			if (item.variantId() == null || item.quantity() == null || item.quantity() <= 0) {
+				continue;
+			}
+			Query query = new Query(Criteria.where("_id").is(item.variantId()));
+			Update update = new Update().inc("stock", item.quantity());
+			mongoTemplate.findAndModify(query, update, FindAndModifyOptions.options().returnNew(true), ProductVariant.class);
+		}
+
+		log.info("Successfully restored inventory stock for {} variant(s)", items.size());
+		return true;
 	}
 
 	private String generateVariantSku(String productCode, String color, String size, Long variantId) {
