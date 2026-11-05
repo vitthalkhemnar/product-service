@@ -54,7 +54,7 @@ public class ProductService {
 		return products.stream().map(this::mapToProductResponse).toList();
 	}
 	
-	@Cacheable(value = "productService", key="'productsPage'")
+	@Cacheable(value = "productService", key = "'productsPage_' + #pageable.pageNumber + '_' + #pageable.pageSize + '_' + #pageable.sort")
 	public Page<Product> getProducts(Pageable pageable) {
 		return productRepository.findAll(pageable);
 	}

@@ -48,7 +48,7 @@ public class ProductController {
 			@RequestParam("file") MultipartFile file) {
 		
 		String fileName = file.getOriginalFilename();
-		int index = fileName != null ? fileName.indexOf(".") : -1;
+		int index = fileName != null ? fileName.lastIndexOf(".") : -1;
 		
 		if(index == -1) {
 			return ResponseEntity.badRequest().body("Only files with extension .csv can be uploaded.");
