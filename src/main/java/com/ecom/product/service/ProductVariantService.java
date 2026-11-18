@@ -74,7 +74,7 @@ public class ProductVariantService {
 	public VariantResponse updateVariant(VariantRequest req) {
 
 		ProductVariant variant = variantRepository.findById(req.variantId())
-				.orElseThrow(() -> new RuntimeException("Enity not found."));
+				.orElseThrow(() -> new RuntimeException("Entity not found."));
 
 		if (req.color() != null)
 			variant.setColor(req.color());

@@ -132,6 +132,9 @@ public class CartService {
 		    cart = cartRepository.save(cart);
 		}
 		
+		if (cart.getItems() == null) {
+			return List.of();
+		}
 		
 		List<CartItemDto> cartItems = cart.getItems().stream().map(i -> {
 			return CartItemDto.builder()
